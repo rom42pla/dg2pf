@@ -13,13 +13,17 @@ import torchvision
 from torch import nn
 from torch import optim
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 from torchmetrics.functional.classification import multiclass_f1_score, multiclass_accuracy
 from torchvision.transforms import transforms
+import pytorch_lightning as pl
 from tqdm import tqdm, trange
 
 from datasets_handlers import cifar10, imagenet
 from distillation import KDLoss
+from models.base_classification import BaseClassificationModel
 from models.resnet import ResNet, resnet18
+from models.vggbase import VGGBase, VGG
 from models.vit import ViT
 from pruning import prune, get_pruned_perc, get_max_abs_weight, get_unique_weights
 from quantization import WeightClipper, weight_quantize, check_if_quantization_works
@@ -169,9 +173,10 @@ def disprunq(
         dataset_train,
         dataset_val,
         quantization_bits: int,
-        percent: float,
+        pruning_percent: float,
         r: float = 0.001,
         do_pruning: bool = True,
+        do_quantization: bool = True,
         max_epochs: int = 100,
         teacher: Optional[nn.Module] = None,
         batch_size: int = 2,
@@ -184,83 +189,92 @@ def disprunq(
     assert device in {"cpu", "cuda", "auto"}
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
-    range_clip = get_max_abs_weight(model=model)
-    optimizer = optim.SGD(model.parameters(), lr=1e-4, momentum=0.9, weight_decay=0)
-    # todo set dataloaders
 
-    # trainset = torchvision.datasets.CIFAR10(
-    #     root='./data', train=True, download=True, transform=transform_train)
-
-    # part_tr = torch.utils.data.random_split(trainset, [1280 ,len(trainset)-1280])[0]
-    # part_fn = torch.utils.data.random_split(te, [te_split_len, len(te)-te_split_len])[0]
-    dataloader_train = torch.utils.data.DataLoader(
-        dataset_train, batch_size=batch_size, shuffle=True, num_workers=1)
-
-    # testset = torchvision.datasets.CIFAR10(
-    #     root='./data', train=False, download=True, transform=transform_test)
-    dataloader_test = torch.utils.data.DataLoader(
-        dataset_val, batch_size=batch_size, shuffle=False, num_workers=1)
-
-    test_one_epoch(
+    model = BaseClassificationModel(
         model=model,
-        dataloader_test=dataloader_test,
-        current_epoch=0,
-        criterion=nn.CrossEntropyLoss(),
-        is_quantized=False,
-        device=device,
+        teacher=teacher,
+        do_pruning=do_pruning,
+        pruning_percent=pruning_percent,
+        do_quantization=do_quantization,
+        quantization_bits=quantization_bits,
     )
+    dataloader_train = DataLoader(
+        dataset_train, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count() - 2)
+    dataloader_test = DataLoader(
+        dataset_val, batch_size=batch_size, shuffle=False, num_workers=os.cpu_count() - 2)
 
-    for epoch in range(max_epochs):
-        if epoch == 1:
-            range_clip = get_max_abs_weight(model=model)
-        train_one_epoch(
-            model=model,
-            teacher=teacher,
-            dataloader_train=dataloader_train,
-            do_pruning=True if (epoch == 0 and do_pruning) else False,
-            do_quantization=False if epoch == 0 else True,
-            optimizer=optimizer,
-            criterion=nn.CrossEntropyLoss(),
-            quantization_bits=quantization_bits,
-            percent=percent,
-            range_clip=range_clip,
-            current_epoch=epoch,
-            device=device,
-        )
-        # print("test float:")
-        test_one_epoch(
-            model=model,
-            dataloader_test=dataloader_test,
-            current_epoch=epoch,
-            criterion=nn.CrossEntropyLoss(),
-            is_quantized=False,
-            device=device,
-        )
-        # print("test quantized:")
+    trainer = pl.Trainer(
+        accelerator="gpu" if device == "cuda" else "cpu",
+        # devices=1 if device == "cuda" else os.cpu_count(),
+        # check_val_every_n_epoch=1,
+        # gradient_clip_val=1,
+        # log_every_n_steps=1,
+        precision=16,
+        # callbacks=[],
+        enable_model_summary=True,
+    )
+    trainer.test(model, dataloader_test)
+    trainer.fit(model, dataloader_train, dataloader_test)
+    exit()
+    # test_one_epoch(
+    #     model=model,
+    #     dataloader_test=dataloader_test,
+    #     current_epoch=0,
+    #     criterion=nn.CrossEntropyLoss(),
+    #     is_quantized=False,
+    #     device=device,
+    # )
 
-        quantized_model = pickle.loads(
-            pickle.dumps(model)
-        )
-        with torch.no_grad():
-            quantized_model.apply(WeightClipper(range_clip))
-            weight_quantize(quantized_model, 1, bits=quantization_bits, range_clip=range_clip)
-            quantized_model.apply(WeightClipper(range_clip))
-
-        test_one_epoch(
-            model=quantized_model,
-            dataloader_test=dataloader_test,
-            current_epoch=epoch,
-            criterion=nn.CrossEntropyLoss(),
-            is_quantized=True,
-        )
-        print("Unique values in weights: Float:", get_unique_weights(model).shape[0],
-              "Quantized(<2^", quantization_bits, "):", get_unique_weights(quantized_model).shape[0])
-        check_if_quantization_works(quantized_model, range_clip, quantization_bits)
+    # for epoch in range(max_epochs):
+    #     if epoch == 1:
+    #         range_clip = get_max_abs_weight(model=model)
+    #     train_one_epoch(
+    #         model=model,
+    #         teacher=teacher,
+    #         dataloader_train=dataloader_train,
+    #         do_pruning=True if (epoch == 0 and do_pruning) else False,
+    #         do_quantization=False if epoch == 0 else True,
+    #         optimizer=optimizer,
+    #         criterion=nn.CrossEntropyLoss(),
+    #         quantization_bits=quantization_bits,
+    #         percent=pruning_percent,
+    #         range_clip=range_clip,
+    #         current_epoch=epoch,
+    #         device=device,
+    #     )
+    #     # print("test float:")
+    #     test_one_epoch(
+    #         model=model,
+    #         dataloader_test=dataloader_test,
+    #         current_epoch=epoch,
+    #         criterion=nn.CrossEntropyLoss(),
+    #         is_quantized=False,
+    #         device=device,
+    #     )
+    #     # print("test quantized:")
+    #
+    #     quantized_model = pickle.loads(
+    #         pickle.dumps(model)
+    #     )
+    #     with torch.no_grad():
+    #         quantized_model.apply(WeightClipper(range_clip))
+    #         weight_quantize(quantized_model, 1, bits=quantization_bits, range_clip=range_clip)
+    #         quantized_model.apply(WeightClipper(range_clip))
+    #
+    #     test_one_epoch(
+    #         model=quantized_model,
+    #         dataloader_test=dataloader_test,
+    #         current_epoch=epoch,
+    #         criterion=nn.CrossEntropyLoss(),
+    #         is_quantized=True,
+    #     )
+    #     print("Unique values in weights: Float:", get_unique_weights(model).shape[0],
+    #           "Quantized(<2^", quantization_bits, "):", get_unique_weights(quantized_model).shape[0])
+    #     check_if_quantization_works(quantized_model, range_clip, quantization_bits)
 
 
 if __name__ == "__main__":
     dataset = "cifar10"
-    # dataset = "imagenet"
     if dataset == "imagenet":
         dataset_train, dataset_val = imagenet.load()
     elif dataset == "cifar10":
@@ -269,25 +283,27 @@ if __name__ == "__main__":
         raise Exception(f"unrecognized dataset {dataset}")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    # device = "cpu"
-    # model = vgg11_bn(pretrained=True).to("cuda")
-    model = "resnet"
-    assert model in {"resnet", "vit"}
+    model = "vit"
+    assert model in {"resnet", "vit", "vgg"}
     if model == "resnet":
         # model = ResNet(dataset=dataset).to(device)
-        model = resnet18(pretrained=True).to(device)
+        # model = resnet18(pretrained=True).to(device)
+        pass
     elif model == "vit":
         model = ViT(dataset=dataset).to(device)
+    elif model == "vgg":
+        model = VGG(dataset=dataset).to(device)
     disprunq(
         model=model,
-        # teacher=vgg11_bn(pretrained=True).to("cuda"),
         teacher=deepcopy(model).to(device),
+        # teacher=VGG(dataset=dataset).to(device),
         dataset_train=dataset_train,
         dataset_val=dataset_val,
         quantization_bits=8,
         r=0.001,
-        percent=0.9,
-        batch_size=16,
+        pruning_percent=0.9,
+        batch_size=128,
         do_pruning=True,
+        do_quantization=False,
         device=device,
     )
