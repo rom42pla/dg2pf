@@ -24,6 +24,5 @@ class ViT(nn.Module):
             images = T.Compose([
                 T.Resize([224, 224]),
             ])(images)
-        print(images.shape)
         logits = self.model(images).logits
         return logits
