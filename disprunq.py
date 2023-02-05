@@ -344,7 +344,7 @@ def disprunq(
             label="base".upper(),
         ),
         "base_model_parameters": get_flattened_weights(model).numel(),
-        "base_model_size_MB": get_model_size(model),
+        # "base_model_size_MB": get_model_size(model),
     }
     if len(frozen_layers) >= 1:
         logs_summary['frozen_layers'] = frozen_layers
@@ -400,10 +400,8 @@ def disprunq(
         quantized_model = get_quantized_weight_model(model=model, quantized_model=quantized_model,
                                                      quantization_bits=quantization_bits, range_clip=range_clip,
                                                      frozen_layers=frozen_layers)
-        if not 'quantized_model_size_MB' in logs_summary:
-            logs_summary['quantized_model_size_MB'] = get_model_size(quantized_model)
-        pprint(logs_summary)
-        exit()
+        # if not 'quantized_model_size_MB' in logs_summary:
+        #     logs_summary['quantized_model_size_MB'] = get_model_size(quantized_model)
 
         dataset_val.transform = T.Compose([
             transforms_val,
