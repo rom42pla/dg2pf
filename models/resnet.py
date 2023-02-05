@@ -1,5 +1,3 @@
-from os.path import join
-
 import torch
 import torch.nn as nn
 import os
@@ -264,8 +262,9 @@ class ResNet(nn.Module):
 def _resnet(arch, block, layers, pretrained, progress, device, **kwargs):
     model = ResNet(block, layers, **kwargs)
     if pretrained:
+        script_dir = os.path.dirname(__file__)
         state_dict = torch.load(
-            join("models", "weights", "cifar10", f"{arch}.pt"), map_location=device
+            script_dir + "/state_dicts/" + arch + ".pt", map_location=device
         )
         model.load_state_dict(state_dict)
     return model
