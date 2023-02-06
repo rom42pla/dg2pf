@@ -1,5 +1,5 @@
 script_starter="bash condor_train.sh"
-shared_params="--seed=42 --dataset_name=imagenet --dataset_path=/data1/visionlab/romeo/disprunq/datasets/imagenet2012 --weights_path=/data1/visionlab/romeo/disprunq/models/weights --logs_path=/data1/visionlab/romeo/disprunq/logs --model_name=vit --teacher_name=same --quantization_bits=8 --pruning_percent=0.5"
+shared_params="--seed=42 --dataset_name=imagenet --dataset_path=/data1/visionlab/romeo/disprunq/datasets/imagenet2012 --weights_path=/data1/visionlab/romeo/disprunq/models/weights --logs_path=/data1/visionlab/romeo/disprunq/logs --model_name=vit --teacher_name=same --quantization_bits=8"
 
 $script_starter $shared_params --pruning_percent=0.1 --label="ablation_pruning_0.1"
 $script_starter $shared_params --pruning_percent=0.2 --label="ablation_pruning_0.2"

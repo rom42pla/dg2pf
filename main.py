@@ -99,9 +99,9 @@ if __name__ == "__main__":
     elif args['dataset_name'] == "cifar10":
         task = "classification"
         dataset_train = torchvision.datasets.CIFAR10(args['dataset_path'],
-                                                     train=True, download=True)
+                                                     train=True, download=False)
         dataset_val = torchvision.datasets.CIFAR10(args['dataset_path'],
-                                                   train=False, download=True)
+                                                   train=False, download=False)
         transforms_train = T.Compose([
             T.ToTensor(),
             T.RandomCrop(32, padding=4),
