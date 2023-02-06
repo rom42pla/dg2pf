@@ -14,6 +14,7 @@ def quantization_fn(
     assert 0 < r <= 1
     assert isinstance(quantization_bits, int) and quantization_bits >= 1
     assert range_clip > 0
+    range_clip += range_clip / ((2 ** (quantization_bits)) - 1)
     if r == 1:
         j = torch.exp2(torch.tensor(quantization_bits - 1)) / range_clip
         return (torch.ceil(x * j) / j) - \

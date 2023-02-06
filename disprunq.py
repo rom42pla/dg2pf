@@ -45,7 +45,6 @@ def train_one_epoch(
         input_shifter: Optional[torch.Tensor] = None,
 
         r: float = 0.001,
-        pruning_percent: float = 0.9,
 
         label: str = "",
 ):
@@ -57,7 +56,7 @@ def train_one_epoch(
     assert (distillation_temperature := float(distillation_temperature)) > 0
     assert 0 <= (distillation_alpha := float(distillation_alpha)) <= 1
     device = get_model_device(model)
-
+    pruning_percent= get_pruned_perc(model)
     # updates the parameters' state
     model.train()
     if teacher is not None:
@@ -370,7 +369,9 @@ def disprunq(
     logs_summary['pruned_model_parameters'] = get_flattened_weights(model, frozen_layers=frozen_layers).count_nonzero().item()
     logs_summary['pruning_percent'] = 1 - logs_summary['pruned_model_parameters'] / logs_summary['base_model_parameters']
     pprint(logs_summary)
-
+    quantized_model = get_quantized_weight_model(model=model, quantized_model=quantized_model,
+                                                 quantization_bits=quantization_bits, range_clip=range_clip,
+                                                 frozen_layers=frozen_layers)
     for epoch in range(max_epochs):
         time.sleep(0.1)
 
@@ -387,7 +388,6 @@ def disprunq(
             do_quantization=True if epoch >= 1 else False,
             optimizer=optimizer,
             quantization_bits=quantization_bits,
-            pruning_percent=pruning_percent,
             range_clip=range_clip,
             label=f"epoch {epoch}".upper(),
             frozen_layers=frozen_layers,
