@@ -6,11 +6,13 @@ $script_starter $shared_params --model_name=vit --quantization_bits=2 --label="a
 $script_starter $shared_params --model_name=vit --quantization_bits=3 --label="ablation_quantization_vit_3"
 $script_starter $shared_params --model_name=vit --quantization_bits=4 --label="ablation_quantization_vit_4"
 $script_starter $shared_params --model_name=vit --quantization_bits=8 --label="ablation_quantization_vit_8"
+$script_starter $shared_params --model_name=vit --quantization_bits=32 --label="ablation_quantization_vit_32"
 
 $script_starter $shared_params --model_name=resnet18 --quantization_bits=1 --label="ablation_quantization_resnet18_1"
 $script_starter $shared_params --model_name=resnet18 --quantization_bits=2 --label="ablation_quantization_resnet18_2"
 $script_starter $shared_params --model_name=resnet18 --quantization_bits=3 --label="ablation_quantization_resnet18_3"
 $script_starter $shared_params --model_name=resnet18 --quantization_bits=4 --label="ablation_quantization_resnet18_4"
 $script_starter $shared_params --model_name=resnet18 --quantization_bits=8 --label="ablation_quantization_resnet18_8"
+$script_starter $shared_params --model_name=resnet18 --quantization_bits=32 --label="ablation_quantization_resnet18_32"
 
 condor_q
