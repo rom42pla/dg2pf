@@ -99,11 +99,23 @@ def get_flattened_weights(
                 or (frozen_layers and parameter_name in frozen_layers):
             continue
         if weights is None:
-            weights = parameter_group.data.clone().flatten().detach().cpu()
+            weights = parameter_group.data.clone().to_dense().flatten().detach().cpu()
         else:
-            weights = torch.concatenate([weights, parameter_group.data.clone().flatten().detach().cpu()])
+            weights = torch.concatenate([weights, parameter_group.data.clone().to_dense().flatten().detach().cpu()])
     return weights
 
+def to_sparse(
+        model: nn.Module,
+):
+    device = get_model_device(model)
+    model.cpu()
+    for name, module in model.named_modules():
+        parameters_name = [name for name, l in module.named_parameters()]
+        if "weight" in parameters_name:
+            module.weight = torch.nn.Parameter(module.weight.data.to_sparse())
+        if "bias" in parameters_name:
+            module.bias = torch.nn.Parameter(module.bias.data.to_sparse())
+    model.to(device)
 
 def weight_clamp(
         model,
@@ -119,7 +131,6 @@ def weight_clamp(
                 continue
             # clamp the weights
             parameter_group.data = torch.clamp(parameter_group.data, min=-range_clip, max=range_clip)
-
 
 def get_model_size(model: nn.Module) -> float:
     tmp_filepath = join(".", "tmp.pth")

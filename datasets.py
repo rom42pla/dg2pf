@@ -2,8 +2,20 @@ from os.path import isdir, join
 
 import torch
 import torchvision
+from torch import nn
+from transformers import AutoModelForImageClassification
 
 from models import vgg, resnet
+
+
+class HuggingFaceModelWrapper(nn.Module):
+    def __init__(self, hf_model):
+        super().__init__()
+        self.hf_model = hf_model
+
+    def forward(self, x):
+        out = self.hf_model(x).logits
+        return out
 
 
 def parse_model(dataset_name: str, model_name: str, weights_path: str, return_frozen_layers: bool = False):
@@ -45,14 +57,30 @@ def parse_model(dataset_name: str, model_name: str, weights_path: str, return_fr
             model = torchvision.models.mobilenet_v3_large()
             model.load_state_dict(torch.load(join(weights_path, "imagenet", "mobilenet_v3_large.pth")))
             frozen_layers = "classifier.3"
-        elif model_name == "vit":
+        elif model_name in {"vit_b_32", "vit"}:
             model = torchvision.models.vit_b_32()
             model.load_state_dict(torch.load(join(weights_path, "imagenet", "vit_b_32.pth")))
             frozen_layers = "heads.head"
-        elif model_name == "swin":
-            model = torchvision.models.swin_b()
-            model.load_state_dict(torch.load(join(weights_path, "imagenet", "swin_b.pth")))
+        elif model_name == "vit_b_16":
+            model = torchvision.models.vit_b_16(image_size=384)
+            model.load_state_dict(torch.load(join(weights_path, "imagenet", "vit_b_16.pth")))
+            frozen_layers = "heads.head"
+        elif model_name == "swin_s":
+            model = torchvision.models.swin_s()
+            model.load_state_dict(torch.load(join(weights_path, "imagenet", "swin_s.pth")))
             frozen_layers = "head"
+        elif model_name == "deit_s":
+            model = HuggingFaceModelWrapper(
+                AutoModelForImageClassification.from_pretrained(
+                    join(weights_path, "imagenet", "deit-small-patch16-224"))
+            )
+            frozen_layers = "classifier"
+        elif model_name == "deit_b":
+            model = HuggingFaceModelWrapper(
+                AutoModelForImageClassification.from_pretrained(
+                    join(weights_path, "imagenet", "deit-base-patch16-224"))
+            )
+            frozen_layers = "classifier"
         else:
             raise NotImplementedError(f"unrecognized model {model_name} for dataset {dataset_name}")
     elif dataset_name == "coco":

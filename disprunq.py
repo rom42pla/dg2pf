@@ -295,13 +295,6 @@ def disprunq(
     input_scaler = nn.Parameter(torch.ones(1, device=device, requires_grad=True))
     input_shifter = nn.Parameter(torch.zeros(1, device=device, requires_grad=True))
 
-    # sets up the optimizer
-    optimizer = optim.AdamW([
-        {'params': model.parameters()},
-        {'params': input_shifter},
-        {'params': input_scaler},
-    ], lr=1e-5, weight_decay=0)
-
     # sets up the datasets
     main_metric_names = {
         "classification": "acc@1",
@@ -372,6 +365,13 @@ def disprunq(
     quantized_model = get_quantized_weight_model(model=model, quantized_model=quantized_model,
                                                  quantization_bits=quantization_bits, range_clip=range_clip,
                                                  frozen_layers=frozen_layers)
+
+    # sets up the optimizer
+    optimizer = optim.AdamW([
+        {'params': model.parameters()},
+        {'params': input_shifter},
+        {'params': input_scaler},
+    ], lr=1e-5, weight_decay=0)
     for epoch in range(max_epochs):
         time.sleep(0.1)
 

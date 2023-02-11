@@ -12,6 +12,7 @@ from pprint import pprint
 
 import torch
 import torchvision
+from torchvision.models import Swin_S_Weights
 from torchvision.transforms import transforms as T
 
 from datasets import parse_model
@@ -22,7 +23,7 @@ from utils import save_json, get_model_size, set_seed
 if __name__ == "__main__":
     torch.jit.enable_onednn_fusion(True)
     logging.getLogger().setLevel(logging.INFO)
-    available_models = {"vgg", "mobilenet", "resnet18", "resnet34", "resnet50", "vit", "swin", "faster_rcnn"}
+    available_models = {"vgg", "mobilenet", "resnet18", "resnet34", "resnet50", "vit", "vit_b_16", "vit_b_32", "swin_s", "deit_s", "deit_b", "faster_rcnn"}
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_name", help="the name of the dataset",
@@ -81,18 +82,28 @@ if __name__ == "__main__":
                                                       split="train")
         dataset_val = torchvision.datasets.ImageNet(args['dataset_path'],
                                                     split="val")
+        if args['model_name'] in {"vit_b_16"}:
+            resize_size, crop_size, interpolation = 384, 384, T.InterpolationMode.BICUBIC
+        elif args['model_name'] in {"swin_s"}:
+            resize_size, crop_size, interpolation = 246, 224, T.InterpolationMode.BICUBIC
+        elif args['model_name'] in {"deit_s", "deit_b"}:
+            resize_size, crop_size, interpolation = 256, 224, T.InterpolationMode.BICUBIC
+        else:
+            resize_size, crop_size, interpolation = 256, 224, T.InterpolationMode.BILINEAR
         transforms_train = T.Compose([
-            T.ToTensor(),
-            T.Resize(256, interpolation=T.InterpolationMode.BILINEAR),
-            T.RandomCrop(224),
+            T.Resize(resize_size,
+                     interpolation=interpolation),
+            T.RandomCrop(crop_size),
             T.RandomHorizontalFlip(),
+            T.ToTensor(),
             T.Normalize((0.485, 0.456, 0.406),
                         (0.229, 0.224, 0.225)),
         ])
         transforms_val = T.Compose([
+            T.Resize(resize_size,
+                     interpolation=interpolation),
+            T.CenterCrop(crop_size),
             T.ToTensor(),
-            T.Resize(256, interpolation=T.InterpolationMode.BILINEAR),
-            T.CenterCrop(224),
             T.Normalize((0.485, 0.456, 0.406),
                         (0.229, 0.224, 0.225)),
         ])
@@ -103,9 +114,9 @@ if __name__ == "__main__":
         dataset_val = torchvision.datasets.CIFAR10(args['dataset_path'],
                                                    train=False, download=False)
         transforms_train = T.Compose([
-            T.ToTensor(),
             T.RandomCrop(32, padding=4),
             T.RandomHorizontalFlip(),
+            T.ToTensor(),
             T.Normalize((0.4914, 0.4822, 0.4465),
                         (0.2023, 0.1994, 0.2010)),
         ])

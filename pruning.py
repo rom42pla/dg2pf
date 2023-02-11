@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from utils import get_flattened_weights
+from utils import get_flattened_weights, to_sparse, get_model_device
 
 
 def get_pruned_perc(model):
@@ -36,6 +36,7 @@ def prune(
 ):
     assert 0 < pruning_percent < 1
     assert isinstance(layerwise, bool)
+
     if not layerwise:
         # finds the left and right margin for the pruning
         weights = get_flattened_weights(model=model, frozen_layers=frozen_layers)

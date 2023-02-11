@@ -3,7 +3,7 @@ from typing import Optional, Union, List
 import torch
 from torch import nn
 
-from utils import get_model_device, weight_clamp
+from utils import get_model_device, weight_clamp, to_sparse
 
 
 def quantization_fn(
