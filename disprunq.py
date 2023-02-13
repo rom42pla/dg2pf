@@ -80,7 +80,7 @@ def train_one_epoch(
         optimizer.zero_grad(set_to_none=True)
 
         if input_shifter:
-            inputs = inputs + input_scaler
+            inputs = inputs + input_shifter
         if input_scaler:
             inputs = inputs * input_scaler
 
@@ -102,7 +102,8 @@ def train_one_epoch(
                 loss = F.cross_entropy(preds, labels)
                 if teacher is not None:
                     preds_log_probs = F.log_softmax(preds / distillation_temperature, dim=-1)
-                    preds_teacher_log_probs = F.log_softmax(teacher(inputs) / distillation_temperature, dim=-1)
+                    with torch.no_grad():
+                        preds_teacher_log_probs = F.log_softmax(teacher(inputs) / distillation_temperature, dim=-1)
 
                     kl_div = F.kl_div(preds_log_probs, preds_teacher_log_probs,
                                       log_target=True, reduction="batchmean")
@@ -245,7 +246,7 @@ def disprunq(
         num_workers: int = max(1, os.cpu_count() - 1),
 
         max_epochs: int = 100,
-        early_stop_patience: int = 2,
+        early_stop_patience: int = 4,
         logs_path: Optional[str] = None,
 ):
     assert task in {"classification", "object_detection"}

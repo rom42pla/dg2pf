@@ -8,15 +8,19 @@ from torch import nn
 from utils import get_flattened_weights, to_sparse, get_model_device
 
 
-def get_pruned_perc(model):
+def get_pruned_perc(
+        model: nn.Module,
+        frozen_layers: Optional[Union[str, List[str]]] = None,
+):
     q = 0
     tot = 0
     for parameter_name, parameter_group in model.named_parameters():
-        if 'weight' in parameter_name:
-            mask = torch.abs(parameter_group.data) == 0
-            q += torch.sum(mask).item()
-            tot += torch.numel(parameter_group)
-    # return q / tot, q, tot
+        if (not parameter_name.endswith("weight")) \
+                or (frozen_layers and parameter_name in frozen_layers):
+            continue
+        mask = torch.abs(parameter_group.data) == 0
+        q += torch.sum(mask).item()
+        tot += torch.numel(parameter_group)
     return q / tot
 
 
