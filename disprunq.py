@@ -443,6 +443,13 @@ def disprunq(
         else:
             epochs_without_improvement += 1
 
+        # save the model
+        if logs_path:
+            try:
+                torch.save(model.state_dict(), join(logs_path, f"model_epoch={epoch}_score={last_score}.pth"))
+            except Exception as e:
+                logging.warning(f"unable to save model")
+                logging.warning(e)
         # checks if early stopping criteria is met
         if epochs_without_improvement >= early_stop_patience and teacher is not None:
             logging.info("teacher detached".upper())
