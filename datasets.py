@@ -74,13 +74,13 @@ def parse_model(dataset_name: str, model_name: str, weights_path: str, return_fr
                 AutoModelForImageClassification.from_pretrained(
                     join(weights_path, "imagenet", "deit-small-patch16-224"))
             )
-            frozen_layers = "classifier"
+            frozen_layers = "hf_model.classifier"
         elif model_name == "deit_b":
             model = HuggingFaceModelWrapper(
                 AutoModelForImageClassification.from_pretrained(
                     join(weights_path, "imagenet", "deit-base-patch16-224"))
             )
-            frozen_layers = "classifier"
+            frozen_layers = "hf_model.classifier"
         else:
             raise NotImplementedError(f"unrecognized model {model_name} for dataset {dataset_name}")
     elif dataset_name == "coco":

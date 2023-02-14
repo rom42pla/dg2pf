@@ -13,10 +13,13 @@ from torchmetrics.detection import MeanAveragePrecision
 from torchmetrics.functional.classification import multiclass_f1_score, multiclass_recall, multiclass_precision, \
     multiclass_accuracy
 
+
 def set_seed(seed: int):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+
+
 def save_json(object, path: str):
     with open(path, "w") as json_file:
         json.dump(object, json_file, indent=4, sort_keys=True)
@@ -81,7 +84,7 @@ def get_max_abs_weight(
                     for parameter_name, parameter_group in model.named_parameters()
                     # if (not parameter_name.endswith("weight")) \
                     #    or (frozen_layers and parameter_name in frozen_layers)
-                    if (frozen_layers and parameter_name in frozen_layers)
+                    if not frozen_layers or (frozen_layers and parameter_name not in frozen_layers)
                 ])
             )
         ).detach().cpu().item()
@@ -106,6 +109,7 @@ def get_flattened_weights(
             weights = torch.concatenate([weights, parameter_group.data.clone().to_dense().flatten().detach().cpu()])
     return weights
 
+
 def to_sparse(
         model: nn.Module,
 ):
@@ -118,6 +122,7 @@ def to_sparse(
         if "bias" in parameters_name:
             module.bias = torch.nn.Parameter(module.bias.data.to_sparse())
     model.to(device)
+
 
 def weight_clamp(
         model,
@@ -134,6 +139,7 @@ def weight_clamp(
                 continue
             # clamp the weights
             parameter_group.data = torch.clamp(parameter_group.data, min=-range_clip, max=range_clip)
+
 
 def get_model_size(model: nn.Module) -> float:
     tmp_filepath = join(".", "tmp.pth")

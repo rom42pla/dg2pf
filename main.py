@@ -49,6 +49,8 @@ if __name__ == "__main__":
                         type=float, default=0.95)
     parser.add_argument("--layerwise_pruning", help="whether to toggle layerwise pruning",
                         action="store_true", default=False)
+    parser.add_argument("--use_frozen_layers", help="whether to unprune and unquantize the last layer",
+                        action="store_true", default=False)
     parser.add_argument("--quantization_bits", help="the number of bits to be used for quantization",
                         type=int, default=32)
     parser.add_argument("--r", help="the value of r in the quantization function",
@@ -162,6 +164,8 @@ if __name__ == "__main__":
     # retrieves the models
     model, frozen_layers = parse_model(dataset_name=args['dataset_name'], model_name=args['model_name'],
                                        weights_path=args['weights_path'], return_frozen_layers=True)
+    print(model)
+    exit()
     if args['teacher_name']:
         if task not in {"classification"}:
             logging.warning(f"distillation is implemented only for classification datasets, "
@@ -201,7 +205,7 @@ if __name__ == "__main__":
         transforms_val=transforms_val,
         task=task,
         batch_size=args['batch_size'],
-        frozen_layers=list(frozen_layers),
+        frozen_layers=list(frozen_layers) if args['use_frozen_layers'] else [],
         logs_path=experiment_path,
         r=args['r'],
     )
