@@ -25,7 +25,8 @@ def quantization_fn(
         return (x - ((torch.arctan(
             -((r * torch.sin(j * pi * x)) / (
                     1 - (r * torch.cos(j * pi * x)))))) / (
-                               pi * j * (1 / 2))))
+                             pi * j * (1 / 2))))
+
 
 def weight_quantize(
         model: nn.Module,
@@ -36,12 +37,14 @@ def weight_quantize(
 ):
     for parameter_name, parameter_group in model.named_parameters():
         # do not prune biases and frozen layers
-        if (not parameter_name.endswith("weight")) \
-                or (frozen_layers and parameter_name in frozen_layers):
+        # if (not parameter_name.endswith("weight")) \
+        #         or (frozen_layers and parameter_name in frozen_layers):
+        if (frozen_layers and parameter_name in frozen_layers):
             continue
         mask = torch.abs(parameter_group.data) > 1e-7
         parameter_group.data[~mask] = 0
         parameter_group.data[mask] = quantization_fn(parameter_group.data[mask], r, bits, range_clip)
+
 
 def get_quantized_weight_model(
         model: nn.Module,
@@ -53,7 +56,8 @@ def get_quantized_weight_model(
     quantized_model.load_state_dict(model.state_dict())
     with torch.no_grad():
         weight_clamp(model=quantized_model, range_clip=range_clip, frozen_layers=frozen_layers)
-        weight_quantize(quantized_model, r=1, bits=quantization_bits, range_clip=range_clip, frozen_layers=frozen_layers)
+        weight_quantize(quantized_model, r=1, bits=quantization_bits, range_clip=range_clip,
+                        frozen_layers=frozen_layers)
         weight_clamp(model=quantized_model, range_clip=range_clip, frozen_layers=frozen_layers)
     quantized_model.eval()
 
@@ -71,8 +75,9 @@ def check_if_quantization_works(model: nn.Module,
     model.cpu()
     for parameter_name, parameter_group in model.named_parameters():
         # do not quantize biases and frozen layers
-        if (not parameter_name.endswith("weight")) \
-                or (frozen_layers and parameter_name in frozen_layers):
+        # if (not parameter_name.endswith("weight")) \
+        #         or (frozen_layers and parameter_name in frozen_layers):
+        if (frozen_layers and parameter_name in frozen_layers):
             continue
         unique_values = parameter_group.data.detach().unique(sorted=False)
         if unique_values.numel() - 1 > 2 ** quantization_bits:
@@ -93,6 +98,7 @@ def check_if_quantization_works(model: nn.Module,
             # print([step * a + -range_clip for a in range(2 ** quantization_bit)])
     # print("unique values: ",uniquw_arr.shape[0], " -> ",uniquw_arr)
     model.to(device)
+
 
 class Multiply(object):
 

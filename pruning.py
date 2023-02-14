@@ -15,8 +15,9 @@ def get_pruned_perc(
     q = 0
     tot = 0
     for parameter_name, parameter_group in model.named_parameters():
-        if (not parameter_name.endswith("weight")) \
-                or (frozen_layers and parameter_name in frozen_layers):
+        # if (not parameter_name.endswith("weight")) \
+        #         or (frozen_layers and parameter_name in frozen_layers):
+        if (frozen_layers and parameter_name in frozen_layers):
             continue
         mask = torch.abs(parameter_group.data) == 0
         q += torch.sum(mask).item()
@@ -51,8 +52,9 @@ def prune(
         # prunes the weights
         for parameter_name, parameter_group in model.named_parameters():
             # do not prune biases and frozen layers
-            if (not parameter_name.endswith("weight")) \
-                    or (frozen_layers and parameter_name in frozen_layers):
+            # if (not parameter_name.endswith("weight")) \
+            #         or (frozen_layers and parameter_name in frozen_layers):
+            if (frozen_layers and parameter_name in frozen_layers):
                 continue
             mask = (parameter_group.data < right_margin) & \
                    (parameter_group.data > left_margin)
@@ -64,8 +66,9 @@ def prune(
     else:
         for parameter_name, parameter_group in model.named_parameters():
             # do not prune biases and frozen layers
-            if (not parameter_name.endswith("weight")) \
-                    or (frozen_layers and parameter_name in frozen_layers):
+            # if (not parameter_name.endswith("weight")) \
+            #         or (frozen_layers and parameter_name in frozen_layers):
+            if (frozen_layers and parameter_name in frozen_layers):
                 continue
             # finds the left and right margin for the pruning
             weights = parameter_group.data.flatten().detach().cpu()

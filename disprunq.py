@@ -127,11 +127,12 @@ def train_one_epoch(
         scaler.scale(loss).backward()
 
         scaler.unscale_(optimizer)
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.5)
 
         for parameter_name, parameter_group in model.named_parameters():
-            if (not parameter_name.endswith("weight")) \
-                    or (frozen_layers and parameter_name in frozen_layers):
+            # if (not parameter_name.endswith("weight")) \
+            #         or (frozen_layers and parameter_name in frozen_layers):
+            if (frozen_layers and parameter_name in frozen_layers):
                 continue
             zero_mask = torch.abs(parameter_group.data) <= 1e-7
             parameter_group.grad[zero_mask] *= 0

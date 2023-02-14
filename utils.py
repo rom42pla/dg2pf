@@ -79,8 +79,9 @@ def get_max_abs_weight(
                 torch.cat([
                     parameter_group.flatten()
                     for parameter_name, parameter_group in model.named_parameters()
-                    if (not parameter_name.endswith("weight")) \
-                       or (frozen_layers and parameter_name in frozen_layers)
+                    # if (not parameter_name.endswith("weight")) \
+                    #    or (frozen_layers and parameter_name in frozen_layers)
+                    if (frozen_layers and parameter_name in frozen_layers)
                 ])
             )
         ).detach().cpu().item()
@@ -95,8 +96,9 @@ def get_flattened_weights(
     weights = None
     for parameter_name, parameter_group in model.named_parameters():
         # do not prune biases and frozen layers
-        if (not parameter_name.endswith("weight")) \
-                or (frozen_layers and parameter_name in frozen_layers):
+        # if (not parameter_name.endswith("weight")) \
+        #         or (frozen_layers and parameter_name in frozen_layers):
+        if (frozen_layers and parameter_name in frozen_layers):
             continue
         if weights is None:
             weights = parameter_group.data.clone().to_dense().flatten().detach().cpu()
@@ -126,8 +128,9 @@ def weight_clamp(
     with torch.no_grad():
         for parameter_name, parameter_group in model.named_parameters():
             # do not prune biases and frozen layers
-            if (not parameter_name.endswith("weight")) \
-                    or (frozen_layers and parameter_name in frozen_layers):
+            # if (not parameter_name.endswith("weight")) \
+            #         or (frozen_layers and parameter_name in frozen_layers):
+            if (frozen_layers and parameter_name in frozen_layers):
                 continue
             # clamp the weights
             parameter_group.data = torch.clamp(parameter_group.data, min=-range_clip, max=range_clip)
