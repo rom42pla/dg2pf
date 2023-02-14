@@ -164,8 +164,6 @@ if __name__ == "__main__":
     # retrieves the models
     model, frozen_layers = parse_model(dataset_name=args['dataset_name'], model_name=args['model_name'],
                                        weights_path=args['weights_path'], return_frozen_layers=True)
-    print(model)
-    exit()
     if args['teacher_name']:
         if task not in {"classification"}:
             logging.warning(f"distillation is implemented only for classification datasets, "
