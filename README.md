@@ -3,6 +3,7 @@ Hey there!
 Just a quick note to let you know that the code is actually out there. But, give us about a week or two (from today, 12/03/2024) because we're planning to spruce it up a bit and put together a readme for you. We'll kick off the repo and circle back with you in two weeks!
 
 Update 1 (21/03/2024):
+
 # Distilled Gradual Pruning with Pruned Fine-tuning
 
 <p align="center">
@@ -88,5 +89,5 @@ This will configure the script to prune 90% of the ResNet-50 model weights while
 
 
 
-If you find this work useful in your research, please consider citing us. Moreover, should you encounter any issues with the code, do not hesitate to post your queries on GitHub. We strive to respond promptly and assist you with your concerns.
+#If you find this work useful in your research, please consider citing us. Moreover, should you encounter any issues with the code, do not hesitate to post your queries on GitHub. We strive to respond promptly and assist you with your concerns.
 
