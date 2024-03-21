@@ -70,30 +70,25 @@ https://gist.github.com/BIGBALLON/8a71d225eff18d88e469e6ea9b39cef4
 
 ### 3. Usage
 
-For usage instructions and examples, refer to `main.py`. Example command to run a model:
+To run the DG2PF model, execute the `main.py` script with necessary command-line arguments. Below is the structure for the command:
 
 ```bash
-python main.py --dataset_name <dataset> --model_name <model_name> --batch_size <size>
+python main.py --dataset_name <dataset_option> --model_name <model_option> --teacher_name <teacher_option> --pruning_percent <prune_percentage>
 ```
 
-Replace `<dataset>`, `<model_name>`, and `<size>` with appropriate values.
+- `--dataset_name`: Specify the dataset to be used. Options include `"imagenet"` or `"cifar10"`.
+- `--model_name`: Define the model architecture. Available options are within `{vgg, mobilenet, resnet18, resnet34, resnet50, vit, vit_b_16, vit_b_32, swin_s, deit_s, deit_b, faster_rcnn}`.
+- `--teacher_name`: Choose the teacher model for knowledge distillation. Use the same options as `--model_name` or `"same"` to use an identical architecture as the model itself.
+- `--pruning_percent`: Set the pruning percentage, a float value > 0 and < 1, representing the proportion of weights to prune.
 
-### 4. Train
+Additional parameters are available at the top of `main.py`.
 
-Training command example:
+For example, to initiate training with a ResNet-50 model on the ImageNet dataset, use the following command:
 
-```bash
-python main.py --dataset_name <dataset> --model_name <model_name> --teacher_name <teacher_name> --pruning_percent <pruning perc>
-```
---dataset_name "imagenet" or "cifar10"
---model_name  and --teacher_name {"vgg", "mobilenet", "resnet18", "resnet34", "resnet50", "vit", "vit_b_16", "vit_b_32", "swin_s", "deit_s", "deit_b", "faster_rcnn"}
---pruning_percent float > 0 and < 1
-
-You can se other parameters top of main.py
-
-to reproduce training with resnet 50 use:
 ```bash
 python main.py --dataset_name "imagenet" --model_name "resnet50" --teacher_name "same" --pruning_percent 0.9
 ```
+
+This will configure the script to prune 90% of the ResNet-50 model weights while employing self-knowledge distillation.
 
 
