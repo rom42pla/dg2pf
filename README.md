@@ -37,7 +37,6 @@ pip install -r requirements.txt
 ```
 
 Data preparation: <insert instructions or script for dataset setup>
-```markdown
 ### Data Preparation
 
 For ImageNet data preparation, please organize the dataset into the following directory structure:
